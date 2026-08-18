@@ -1,6 +1,3 @@
-
-	include ""
-
 	include "nesdefs.dasm"
 
 ;;;;; VARIABLES
@@ -20,18 +17,50 @@ Start:	subroutine
         jsr ClearRAM	; clear RAM
         jsr WaitSync	; wait for VSYNC (and PPU warmup)
 
-	lda #$3f	; $3F -> A register
-        ldy #$00	; $00 -> Y register
-        sta PPU_ADDR	; write high byte first
-        sty PPU_ADDR    ; $3F00 -> PPU address
-        lda #$1c	; $1C = light blue color
-        sta PPU_DATA    ; $1C -> PPU data
+	jsr SetPallete
+	jsr FillVram
+        
+        lda #MASK_BG
+        sta PPU_MASK
+        
         lda #CTRL_NMI
         sta PPU_CTRL	; enable NMI
-        lda #MASK_COLOR
-        sta PPU_MASK	; enable rendering
-.endless
+        
+        
+        
+.endless:
 	jmp .endless	; endless loop
+        
+SetPallete:
+
+	PPU_SETADDR $3F00
+        lda #$0F
+        sta PPU_DATA
+        lda #$16
+        sta PPU_DATA
+        lda #$27
+        sta PPU_DATA
+        lda #$30
+        sta PPU_DATA
+        
+	rts
+        
+FillVram: subroutine
+
+	PPU_SETADDR $2000
+        
+        ldx #$00
+.loop:
+
+	lda #$10
+        sta PPU_DATA
+        lda #$17
+        sta PPU_DATA
+        
+        
+        inx
+        bne .loop
+        rts
 
 ;;;;; COMMON SUBROUTINES
 
@@ -47,4 +76,9 @@ NMIHandler: subroutine
 ;;;;; CPU VECTORS
 
 	NES_VECTORS
+        
+;;;;; CHR
+	org $10000
+	incbin "jroatch.chr"
+        incbin "jroatch.chr"
 
