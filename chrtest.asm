@@ -16,12 +16,22 @@ Start:	subroutine
         jsr WaitSync	; wait for VSYNC
         jsr ClearRAM	; clear RAM
         jsr WaitSync	; wait for VSYNC (and PPU warmup)
-
+	
+        
 	jsr SetPallete
 	jsr FillVram
         
         lda #MASK_BG
         sta PPU_MASK
+        
+        ; RESET
+        
+        lda #0
+        sta PPU_ADDR
+        sta PPU_ADDR
+
+        sta PPU_SCROLL
+        sta PPU_SCROLL
         
         lda #CTRL_NMI
         sta PPU_CTRL	; enable NMI
@@ -46,21 +56,23 @@ SetPallete:
 	rts
         
 FillVram: subroutine
+	
+        PPU_SETADDR $2021	; Set the PPU Address to tile $2021
 
-	PPU_SETADDR $2000
-        
-        ldx #$00
+        ldy #0			; Set up the counter
+
 .loop:
+	lda HelloMsg,y		; Load Hello, World's byte by y
+        beq .end		; End when 0 terminator is detected
+        sta PPU_DATA		; store + advance ppu
+        iny			; Increase Y
+        bne .loop		; If not 0, jmp to .loop
+.end:
+	rts
 
-	lda #$10
-        sta PPU_DATA
-        lda #$17
-        sta PPU_DATA
-        
-        
-        inx
-        bne .loop
-        rts
+HelloMsg:
+	.byte "Hello, World!"	; Data
+        .byte 0			; 0 Terminator
 
 ;;;;; COMMON SUBROUTINES
 
